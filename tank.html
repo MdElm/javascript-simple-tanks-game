@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Tank</title>
+	<style>
+		h1 {
+			font-family: arial;
+			color: blue;
+		}
+
+		h1 sup {
+			color: gray;
+		}
+
+		#game {
+			border: 1px solid #000;
+			margin: 0 auto;
+		}
+	</style>
+	<script src="../jquery/jquery.js"></script>
+	<script src="js/keyboard.js"></script>
+	<script src="js/utility.js"></script>
+	<script src="js/canvas3.js"></script>
+	<script src="js/animate.js"></script>
+	<script src="js/spritesheet.js"></script>
+	<script src="js/sprite.js"></script>
+	<script src="js/point.js"></script>
+	<script src="js/vector.js"></script>
+	<script src="js/segment.js"></script>
+	<script src="js/circle.js"></script>
+	<script src="js/rectangle.js"></script>
+	<script src="js/fire.js"></script>
+	<script src="js/character.js"></script>
+	<script src="js/world.js"></script>
+
+	<script>
+		var Context = null;
+
+		var BLOCK_W = 32;
+		var BLOCK_H = 32;
+
+		var PLAYER = 1;
+		var ENEMIE = 2;
+
+		var player_win = false;
+
+		var fire_sriptesheet = new Spritesheet("img/gallery_10517_34_57614.png");
+
+		var tankArray = new Array();
+
+		tankArray[0] = new Character(576, 416, "img/tanks/tank17.png", false, 0, DIR_N, 1, 4, 4, PLAYER);
+		tankArray[1] = new Character(32, 32, "img/tanks/tank2.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[2] = new Character(32, 32, "img/tanks/tank4.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[3] = new Character(32, 416, "img/tanks/tank12.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[4] = new Character(32, 416, "img/tanks/tank14.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[5] = new Character(32, 32, "img/tanks/tank6.png", false, 0, DIR_N, 1, 4, 4, ENEMIE);
+		tankArray[6] = new Character(32, 32, "img/tanks/tank2.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[7] = new Character(32, 32, "img/tanks/tank4.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[8] = new Character(32, 416, "img/tanks/tank12.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+		tankArray[9] = new Character(32, 416, "img/tanks/tank14.png", false, DIR_E, DIR_N, 1, 2, 2, ENEMIE);
+
+		function enemiesMove(enemie)
+		{
+			if (enemie.character_id != PLAYER)
+			{
+
+				// Enemie Random Shoot
+				var randomShoot = Math.round(Math.random()*20);
+				if (randomShoot == 1)
+				{
+					enemie.fire();
+				}
+
+				if (enemie.bollet != null)
+				{
+					enemie.bollet.draw();
+					enemie.bollet.collisionWithWall();
+					enemie.bollet.collisionWithTank(PLAYER);
+				}
+
+				// Enemie Random Mouvement
+				if ( !enemie.collisionWithWall() ) 
+				{
+					switch (enemie.direction)
+					{
+						case DIR_W:
+							enemie.xPosUpdate(-enemie.dx);
+							enemie.stop_direction = DIR_W;
+							enemie.seq = 2;
+							break
+
+						case DIR_E:
+							enemie.xPosUpdate(+enemie.dx);
+							enemie.stop_direction = DIR_E;
+							enemie.seq = 1;
+							break
+
+						case DIR_N:
+							enemie.yPosUpdate(-enemie.dy);
+							enemie.stop_direction = DIR_N;
+							enemie.seq = 0;
+							break
+
+						case DIR_S:
+							enemie.yPosUpdate(+enemie.dx);
+							enemie.stop_direction = DIR_S;
+							enemie.seq = 3;
+							break
+					}
+				} else {
+					enemie.delay = 0;
+				}
+
+				if (enemie.delay == 0)
+				{
+					enemie.delay = 50;
+					var randomDirection = Math.round(Math.random()*4);
+
+					if (randomDirection == 1)
+						enemie.direction = DIR_W;
+					else if (randomDirection == 2)
+						enemie.direction = DIR_E;
+					else if (randomDirection == 3)
+						enemie.direction = DIR_N;
+					else if (randomDirection == 4)
+						enemie.direction = DIR_S;
+				}
+
+				enemie.tank.draw(enemie.x, enemie.y, enemie.seq);
+				enemie.delay--;
+
+			}
+			
+		}
+
+		$(document).ready(function() {
+			Context = new HTML("game", 640, 480);
+			window.gfx = Context.context;
+			InitializeKeyboard();
+			DisableScrollbar();
+			InitializeAnimationCounters();
+		});
+
+		function gameLoop()
+		{
+			ResetAnimationCounter();
+			DrawMap();
+
+			/****************************
+			* Player Section
+			*****************************/
+			if (tankArray[0] != null)
+			{
+				tankArray[0].is_moving = false;
+				tankArray[0].direction = 0;
+
+				/* Player Collision Detection - Wall */
+				tankArray[0].collisionWithWall();
+				//player.collisionWithOtherTank();
+
+				/* Player Fire */
+				//player.fireDraw(ENEMIE);
+				if (tankArray[0].bollet != null)
+				{
+					tankArray[0].bollet.draw();
+					tankArray[0].bollet.collisionWithWall();
+					tankArray[0].bollet.collisionWithTank(ENEMIE);
+				}
+
+				/* Keyboard Controls */
+
+				// Player position control
+				if (key.left && key.up)
+				{
+					tankArray[0].is_moving = false;
+				} else
+				if (key.up && key.right)
+				{
+					tankArray[0].is_moving = false;
+				} else
+				if (key.right && key.down)
+				{
+					tankArray[0].is_moving = false;
+				} else
+				if (key.down && key.left)
+				{
+					tankArray[0].is_moving = false;
+				} 
+				else
+				{
+					if (key.left) {
+						tankArray[0].xPosUpdate(-tankArray[0].dx)
+						tankArray[0].direction |= DIR_W; 
+						tankArray[0].stop_direction = 0;
+						tankArray[0].stop_direction |= DIR_W; 
+						tankArray[0].is_moving = true;
+					}
+					if (key.right) { 
+						tankArray[0].xPosUpdate(+tankArray[0].dx);
+						tankArray[0].direction |= DIR_E; 
+						tankArray[0].stop_direction = 0;
+						tankArray[0].stop_direction |= DIR_E; 
+						tankArray[0].is_moving = true;
+					}
+					if (key.up) { 
+						tankArray[0].yPosUpdate(-tankArray[0].dy);
+						tankArray[0].direction |= DIR_N; 
+						tankArray[0].stop_direction = 0;
+						tankArray[0].stop_direction |= DIR_N; 
+						tankArray[0].is_moving = true; 
+					}
+					if (key.down) { 
+						tankArray[0].yPosUpdate(+tankArray[0].dy);
+						tankArray[0].direction |= DIR_S; 
+						tankArray[0].stop_direction = 0;
+						tankArray[0].stop_direction |= DIR_S; 
+						tankArray[0].is_moving = true;
+					}
+				}
+				// Fire control
+				if (key.z)
+				{
+					tankArray[0].fire(tankArray);
+				}
+
+				/* Animated Characters */
+
+				if (tankArray[0].is_moving)
+				{
+					if (tankArray[0].direction & DIR_W) tankArray[0].seq = 2;
+					if (tankArray[0].direction & DIR_E) tankArray[0].seq = 1;
+					if (tankArray[0].direction & DIR_N) tankArray[0].seq = 0;
+					if (tankArray[0].direction & DIR_S) tankArray[0].seq = 3;
+					tankArray[0].tank.draw(tankArray[0].x, tankArray[0].y, tankArray[0].seq);
+				}
+				else
+				{
+					if (tankArray[0].stop_direction & DIR_W) tankArray[0].seq = 2;
+					if (tankArray[0].stop_direction & DIR_E) tankArray[0].seq = 1;
+					if (tankArray[0].stop_direction & DIR_N) tankArray[0].seq = 0;
+					if (tankArray[0].stop_direction & DIR_S) tankArray[0].seq = 3;
+					tankArray[0].tank.draw(tankArray[0].x, tankArray[0].y, tankArray[0].seq);
+				}
+
+				tankArray[0].rect.draw("green");
+
+				/****************************
+				* Enemie Section
+				*****************************/
+				for (var i = 0; i < tankArray.length; i++)
+				{
+					if (tankArray[i] != undefined && tankArray[i] != null)
+						enemiesMove(tankArray[i]);
+					else
+						continue;
+				}
+
+			}
+
+			else
+
+			{
+				gfx.clearRect(0, 0, 640, 480);
+				gfx.fillStyle = "#000000";
+				gfx.fillRect(0, 0, 640, 480);
+				gfx.fillStyle = "#ffffff";
+				gfx.font = "50px Sans-Serif";
+				gfx.textBaseline = "top";
+				gfx.fillText("GAME OVER", 170, 180);
+
+			}
+
+		}
+
+		setInterval(gameLoop, 20);
+	</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+</body>
+</html>
